@@ -1,13 +1,13 @@
 # Edge Debloat (and Bing Remover)
 
-This is a collection of tweaks and settings I've been using for sometime now, to make using Edge less annoying, specially:
-- Remove Bing search engine and force Google;
-- Prevent Edge from becoming the default browser and asking for it all the time.
+This is a collection of tweaks and settings I've been using for sometime now, to make using Edge less annoying, specially by:
+- Removing Bing search engine and forcing Google;
+- Preventing Edge from becoming the default browser and asking for it all the time.
 
 ## AI Usage?
 Yes, Gemini 3.1 Pro helped me organize and bring parity between the Windows and macOS tweaks I've gathered over time.
 How:
-- Consolidation, correction, and mirroring the tweaks for both operating systems.
+- Consolidation, correction, automation and organization of the tweaks for both operating systems.
 - Creation of the python scripts for Bing Search Removal (both Windows and macOS).
 - The features and instructions in this README.md file below the following 3 horizontals lines were AI-generated following my instructions and edited as needed.
 
@@ -23,19 +23,21 @@ Use them at your own risk.
 ---
 ---
 
-# Bing Search Removal
+# 1. Bing Search Removal
 
-Windows and macOS, both python scripts (one for each OS).
+Python scripts for both Windows and macOS. No additional packages needed (uses only standard libraries). Python 3.10+ is recommended.
 
 ## Features
 
-Remove Bing engine from "search bar", editing Edge's `WebData` database file.
+Removes Bing engine from "search bar" by directly editing Edge's `Web Data` SQLite database file.
+
+First, *it *safely creates a backup of the database**, and then executes a SQL command to delete any search engine entries from the `keywords` table where the URL contains `bing.com` or the keyword contains `bing`.
 
 ## Bing Search Removal HOWTO
 
 Run `nuke_bing_win.py` on Windows, or `nuke_bing_mac.py` on macOS.
 
-# Edge Debloat
+# 2. Edge Debloat
 
 Windows (registry) and macOS (property list).
 
