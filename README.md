@@ -64,6 +64,7 @@ Windows (registry) and macOS (property list).
 * Disables network prediction (prefetching pages) to save bandwidth and improve privacy.
 * Stops Edge from running in the background when closed (Startup Boost).
 * Limits the maximum disk cache size to 256MB to prevent storage bloat.
+* **Allows User DNS Configuration**: Explicitly clears DNS policies (such as DNS-over-HTTPS and built-in DNS client locks) to ensure that the secure DNS settings remain configurable in Edge's privacy settings UI.
 
 **4. Removes Shopping, Rewards, & Ads/Promotions**
 * Disables the built-in shopping and coupon assistant.
@@ -89,4 +90,10 @@ This is a Windows Registry script that applies group policies to `HKEY_LOCAL_MAC
 The `plist` file below contains the same enterprise policies as the Windows `.reg` file above.
 
 * It should be copied to `~/Library/Preferences/`, overwriting the existing file if it exists - it will replace any previous custom policy settings.
+* Since macOS caches preference files via `cfprefsd`, you may need to run `killall cfprefsd` in the Terminal, or run the following commands to explicitly clear any cached DNS policies:
+  ```bash
+  defaults delete com.microsoft.Edge DnsOverHttpsMode
+  defaults delete com.microsoft.Edge DnsOverHttpsTemplates
+  defaults delete com.microsoft.Edge BuiltInDnsClientEnabled
+  ```
 * Restart Edge for the changes to take effect.
