@@ -7,7 +7,7 @@
     <key>ShowRecommendationsEnabled</key>
     <false/>
     <key>HideFirstRunExperience</key>
-    <false/>
+    <true/>
     <key>ConfigureDoNotTrack</key>
     <true/>
     <key>AlternateErrorPagesEnabled</key>

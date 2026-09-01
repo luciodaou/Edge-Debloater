@@ -1,58 +1,56 @@
+"""Remove the Bing search engine from every Microsoft Edge profile on macOS.
+
+Backs up each profile's "Web Data" SQLite database (SQLite online backup API,
+consistent even while Edge runs), then deletes the Bing entries.
+
+Exit code: 0 on success, 1 on failure.
+"""
+
 import os
-import sqlite3
-import shutil
-import time
+import sys
+
+# Make the repository-root library importable regardless of the current
+# working directory (e.g. when double-clicked from Finder).
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import nuke_bing_lib  # noqa: E402
+
+LOCK_HINT = (
+    "DATABASE LOCKED: Microsoft Edge is still running in the background.",
+    "Please completely quit Edge (Cmd+Q) or kill the 'Microsoft Edge' process, then rerun this script.",
+)
+
 
 def nuke_bing_from_edge():
-    # 1. Locate the Web Data database
-    home_dir = os.path.expanduser("~")
-    db_path = os.path.join(home_dir, "Library", "Application Support", "Microsoft Edge", "Default", "Web Data")
+    # 1. Locate every Edge profile database
+    user_data_dir = os.path.join(
+        os.path.expanduser("~"), "Library", "Application Support", "Microsoft Edge"
+    )
+    db_paths = nuke_bing_lib.find_web_data_files(user_data_dir)
+    if not db_paths:
+        print(f"[-] Error: Could not find any Edge profile database under:\n{user_data_dir}")
+        return False
 
-    if not os.path.exists(db_path):
-        print(f"[-] Error: Could not find Edge Web Data file at:\n{db_path}")
-        return
+    # 2. Back up + clean each profile
+    failures = 0
+    total_deleted = 0
+    for db_path in db_paths:
+        profile = os.path.basename(os.path.dirname(db_path))
+        print(f"[+] Processing profile: {profile}")
+        ok, deleted = nuke_bing_lib.nuke_profile(db_path, LOCK_HINT, LOCK_HINT)
+        total_deleted += deleted
+        if not ok:
+            failures += 1
 
-    print(f"[+] Found Edge database: {db_path}")
+    summary = f"[+] Summary: {len(db_paths)} profile(s) processed, {total_deleted} Bing entry/entries deleted"
+    if failures:
+        summary += f", {failures} profile(s) failed"
+    print(summary + ".")
+    return failures == 0
 
-    # 2. Create a safety backup before touching anything
-    backup_path = f"{db_path}.backup_{int(time.time())}"
-    try:
-        shutil.copy2(db_path, backup_path)
-        print(f"[+] Backup successfully created at: {backup_path}")
-    except PermissionError:
-        print("[-] PERMISSION DENIED: Microsoft Edge might be currently running.")
-        print("[-] Please completely quit Edge (Cmd+Q) and try again.")
-        return
-
-    # 3. Connect to the database and delete Bing
-    try:
-        # We use a slight timeout in case the file is momentarily locked
-        conn = sqlite3.connect(db_path, timeout=3.0)
-        cursor = conn.cursor()
-
-        # Check how many Bing entries exist
-        cursor.execute("SELECT COUNT(*) FROM keywords WHERE url LIKE '%bing.com%' OR keyword LIKE '%bing%'")
-        count = cursor.fetchone()[0]
-
-        if count == 0:
-            print("[!] No Bing search engines found in the database. It might already be deleted.")
-        else:
-            # Execute the deletion
-            cursor.execute("DELETE FROM keywords WHERE url LIKE '%bing.com%' OR keyword LIKE '%bing%'")
-            conn.commit()
-            print(f"[+] Success! Deleted {count} Bing-related entry/entries from the Edge database.")
-
-    except sqlite3.OperationalError as e:
-        if "locked" in str(e).lower():
-            print("[-] DATABASE LOCKED: Microsoft Edge is still running in the background.")
-            print("[-] Please completely quit Edge (Cmd+Q) or kill the 'Microsoft Edge' process, then rerun this script.")
-        else:
-            print(f"[-] SQLite Error: {e}")
-    finally:
-        if 'conn' in locals():
-            conn.close()
 
 if __name__ == "__main__":
     print("--- Edge Bing Removal Tool (macOS) ---")
-    nuke_bing_from_edge()
+    success = nuke_bing_from_edge()
     print("--------------------------------------")
+    sys.exit(0 if success else 1)

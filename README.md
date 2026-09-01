@@ -1,6 +1,6 @@
 # Edge Debloat (and Bing Remover)
 
-This is a collection of tweaks and settings I've been using for sometime now, to make using Edge less annoying, specially by:
+This is a collection of tweaks and settings I've been using for sometime now, to make using Edge less annoying, especially by:
 - Removing Bing search engine and forcing Google;
 - Preventing Edge from becoming the default browser and asking for it all the time.
 
@@ -9,7 +9,7 @@ Yes, Gemini 3.1 Pro helped me organize and bring parity between the Windows and 
 How:
 - Consolidation, correction, automation and organization of the tweaks for both operating systems.
 - Creation of the python scripts for Bing Search Removal (both Windows and macOS).
-- The features and instructions in this README.md file below the following 3 horizontals lines were AI-generated following my instructions and edited as needed.
+- The features and instructions in this README.md file below the following 3 horizontal lines were AI-generated following my instructions and edited as needed.
 
 # Disclaimer
 
@@ -25,17 +25,23 @@ Use them at your own risk.
 
 # 1. Bing Search Removal
 
-Python scripts for both Windows and macOS. No additional packages needed (uses only standard libraries). Python 3.10+ is recommended.
+Python scripts for both Windows and macOS. No additional packages needed (uses only standard libraries). Python 3.7 or newer is required.
 
 ## Features
 
-Removes Bing engine from "search bar" by directly editing Edge's `Web Data` SQLite database file.
+Removes the Bing engine from the "search bar" by directly editing Edge's `Web Data` SQLite database file, across **all Edge profiles** (`Default`, `Profile 1`, `Profile 2`, ...).
 
-First, *it *safely creates a backup of the database**, and then executes a SQL command to delete any search engine entries from the `keywords` table where the URL contains `bing.com` or the keyword contains `bing`.
+First, it creates a consistent backup of each profile database (`Web Data.backup_<timestamp>` next to the original, via SQLite's online backup API), and then executes a SQL command to delete any search engine entries from the `keywords` table where the URL contains `bing.com` or the keyword contains `bing`.
+
+The scripts exit with code `0` on success and `1` on failure, so they can also be used from automation.
 
 ## Bing Search Removal HOWTO
 
-Run `nuke_bing_win.py` on Windows, or `nuke_bing_mac.py` on macOS.
+Run `nuke_bing_win.py` on Windows, or `nuke_bing_mac.py` on macOS (double-click, or from a terminal). Close Edge first if you can.
+
+Notes:
+- The scripts import the shared `nuke_bing_lib.py` from the repository root, so keep the folder layout as-is.
+- Every run leaves a `Web Data.backup_<timestamp>` file inside each profile folder; delete old backups manually once you are happy with the result.
 
 # 2. Edge Debloat
 
@@ -87,10 +93,11 @@ This is a Windows Registry script that applies group policies to `HKEY_LOCAL_MAC
 
 ### macOS: com.microsoft.Edge.plist
 
-The `plist` file below contains the same enterprise policies as the Windows `.reg` file above.
+The `plist` file contains the same enterprise policies as the Windows `.reg` file above. Applying it replaces any previous custom Edge policy settings.
 
-* It should be copied to `~/Library/Preferences/`, overwriting the existing file if it exists - it will replace any previous custom policy settings.
-* Since macOS caches preference files via `cfprefsd`, you may need to run `killall cfprefsd` in the Terminal, or run the following commands to explicitly clear any cached DNS policies:
+* Recommended (Terminal): `defaults import com.microsoft.Edge /path/to/com.microsoft.Edge.plist` — this writes the policies and refreshes the macOS preferences cache in one step.
+* Alternative: copy the file to `~/Library/Preferences/` (overwriting the existing one), then run `killall cfprefsd` in Terminal so macOS re-reads the file.
+* If secure DNS settings were previously locked by policy, also clear the cached DNS policies explicitly:
   ```bash
   defaults delete com.microsoft.Edge DnsOverHttpsMode
   defaults delete com.microsoft.Edge DnsOverHttpsTemplates
